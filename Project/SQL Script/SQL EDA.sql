@@ -5,14 +5,13 @@ FROM hr_data;
 
 -- Workforce Overview
 	-- Headcount Per Department
-    SELECT 
-		department,
-		COUNT(*) as count_per_dep
-	FROM 
-		hr_data
-	GROUP BY 
-		department
-	;
+SELECT 
+	department,
+	COUNT(*) as count_per_dep
+FROM 
+	hr_data
+GROUP BY 
+	department;
 
     
 -- Headcount per Job_Level
@@ -36,8 +35,6 @@ FROM hr_data;
 
 -- Attrition rate by dimension 
 -- 		Department
-
-
 SELECT 
 	department,
 	COUNT(department) as Total_dept_emp,
@@ -77,7 +74,7 @@ FROM hr_data
 GROUP BY country;
 
 
--- 		Tenure
+-- 	Tenure
 SELECT
 	job_level,
     COUNT(job_level) as job_level_pop,
@@ -88,6 +85,44 @@ GROUP BY job_level;
 	
 
 SELECT distinct status from hr_data;
-select * from hr_data
+ 
+
+-- SALARY ANALYSIS
+-- 	distribution
+WITH RankedData AS (
+	SELECT
+		salary,
+		ROW_NUMBER() OVER (ORDER BY salary) as row_num,
+		COUNT(*) OVER () AS total_count
+	FROM hr_data
+	WHERE salary IS NOT NULL 
+	),
+    
+MedianCalculation AS(
+	SELECT AVG(salary) AS median
+	FROM RankedData
+	WHERE row_num IN (FLOOR((total_count + 1)/2), CEIL((total_count+1)/2))
+    ),
+
+SummaryStats AS(
+SELECT 
+	COUNT(salary) AS total_count,
+    MIN(salary) AS minimum,
+    MAX(salary) AS maximum,
+    AVG(salary) AS average,
+	stddev(salary) AS std
+FROM hr_data
+)
+
+SELECT
+	s.*,
+    m.median
+FROM SummaryStats s
+CROSS JOIN MedianCalculation m;
+-- We can observe that the average salary is significantly higher than the minimum salary
+-- while the std 
+
+
+
 
 
