@@ -76,15 +76,25 @@ GROUP BY country;
 
 -- 	Tenure
 SELECT
-	job_level,
-    COUNT(job_level) as job_level_pop,
-    SUM(CASE WHEN status IN ('Resigned', 'Terminated') THEN 1 ELSE 0 END) as job_lvl_attrition,
-    ROUND(AVG(CASE WHEN status IN ('Resigned', 'Terminated') THEN 1 ELSE 0 END)*100,2) AS attrition_rate
+	CASE
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, curdate()) < 12 THEN '1 yr'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, curdate()) < 36 THEN '1-3 yrs'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date,  curdate()) < 60 THEN '3-5 years'
+        ELSE '5+ years'
+	END AS tenure_bucket,
+	SUM(CASE 
+		WHEN status IN ('resigned', 'terminated') THEN 1 
+        ELSE 0
+	END) AS attrition,
+    ROUND(AVG(CASE
+				WHEN status IN ('resigned', 'terminated') THEN 1
+                ELSE 0
+			END)*100,2) as attrition_rate
+    
 FROM hr_data
-GROUP BY job_level;
-	
-
-SELECT distinct status from hr_data;
+GROUP BY tenure_bucket
+ORDER BY tenure_bucket;
+-- here we can observe that the higher the tenurity, the less likely an employee to leave weather it is voluntary or not
  
 
 -- SALARY ANALYSIS
@@ -120,7 +130,42 @@ SELECT
 FROM SummaryStats s
 CROSS JOIN MedianCalculation m;
 -- We can observe that the average salary is significantly higher than the minimum salary
--- while the std 
+-- but compared to the maximum salary, it is nowhere near that 
+-- std is also close to the average and minimum salary, it means that just in few walks, it covers almost all of those salaries 
+-- insinuating that the distribution at the right side is packed
+-- while in the left, few more step (adding the std) to the min or median would still not enough to get to the max salaries 
+-- Indicating that the above average salary are skewed, almost outliers
+
+-- Now we will try to observe which department has below or upper salaries 
+
+WITH calculated_salaries as(
+	SELECT
+		department,
+		salary,
+		AVG(salary) OVER() AS global_avg_salary
+	FROM hr_data
+    ),
+
+positioned_salaries AS (
+	SELECT
+		department,
+		salary,
+		CASE
+			WHEN salary > global_avg_salary THEN 'above'
+			Else 'below'
+		END as position
+	FROM calculated_salaries
+)
+
+SELECT 
+	department,
+    SUM(CASE WHEN position = 'above' Then 1 ELSE 0 END) AS above_avg,
+    SUM(CASE WHEN position = 'below' THEN 1 ELSE 0 END) AS below_avg
+FROM positioned_salaries
+GROUP BY department;
+    
+
+select * from hr_data
 
 
 
