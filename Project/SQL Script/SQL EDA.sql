@@ -163,11 +163,13 @@ SELECT
     SUM(CASE WHEN position = 'below' THEN 1 ELSE 0 END) AS below_avg
 FROM positioned_salaries
 GROUP BY department;
-    
-
-select * from hr_data
 
 
 
-
-
+SELECT
+	performance_rating,
+	SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) AS  active,
+    SUM(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END) AS resigned,
+    SUM(CASE WHEN status = 'retired' THEN 1 ELSE 0 END) AS retired
+FROM hr_data
+GROUP BY performance_rating;
