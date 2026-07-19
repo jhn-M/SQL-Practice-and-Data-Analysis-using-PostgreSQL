@@ -129,7 +129,7 @@ SELECT
     m.median
 FROM SummaryStats s
 CROSS JOIN MedianCalculation m;
--- We can observe that the average salary is significantly higher than the minimum salary
+-- We can observe that the average salary is higher than the minimum salary
 -- but compared to the maximum salary, it is nowhere near that 
 -- std is also close to the average and minimum salary, it means that just in few walks, it covers almost all of those salaries 
 -- insinuating that the distribution at the right side is packed
@@ -173,3 +173,87 @@ SELECT
     SUM(CASE WHEN status = 'retired' THEN 1 ELSE 0 END) AS retired
 FROM hr_data
 GROUP BY performance_rating;
+
+
+-- TENURE ANALYSIS
+
+-- Building Finer tenure Bucket with attrition and attrition rate
+-- Resigned and Terminated (Across All performance Rating) 
+SELECT
+	CASE
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 3 THEN '0-3 months'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 6 THEN '3-6 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 12 THEN '6-12 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 24 THEN '1-2 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 36 THEN '2-3 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 60 THEN '3-5 years'
+		ELSE '5+ year'
+	END AS fine_tenure_bucket,
+	SUM(CASE WHEN status IN ('resigned', 'terminated') THEN 1 ELSE 0 END) AS attrition,
+	ROUND(AVG(CASE WHEN status IN ('resigned', 'terminated') THEN 1 ELSE 0 END)*100,2) AS attrition_rate
+
+FROM hr_data
+GROUP BY fine_tenure_bucket
+ORDER BY MIN(TIMESTAMPDIFF(MONTH, hire_date, CURDATE()));
+
+-- Resigned (Across All performance Rating) 
+SELECT
+	CASE
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 3 THEN '0-3 months'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 6 THEN '3-6 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 12 THEN '6-12 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 24 THEN '1-2 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 36 THEN '2-3 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 60 THEN '3-5 years'
+		ELSE '5+ year'
+	END AS split_attrition_bucket,
+	SUM(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END) AS resigned_attrition,
+	ROUND(AVG(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END)*100,2) AS resigned_attrition_rate,
+	SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) AS terminated_attrition,
+	ROUND(AVG(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END)*100,2) AS terminated_attrition_rate
+
+FROM hr_data
+GROUP BY split_attrition_bucket
+ORDER BY MIN(TIMESTAMPDIFF(MONTH, hire_date, CURDATE()));
+
+
+
+-- Attrition rate splitted to resigned and terminated in 'Needs Improvement Group'
+
+SELECT
+	CASE
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 3 THEN '0-3 months'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 6 THEN '3-6 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 12 THEN '6-12 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 24 THEN '1-2 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 36 THEN '2-3 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 60 THEN '3-5 years'
+		ELSE '5+ year'
+	END AS fine_tenure_bucket,
+	SUM(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END) AS resigned_attrition,
+	ROUND(AVG(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END)*100,2) AS resigned_attrition_rate,
+	SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) AS terminated_attrition,
+	ROUND(AVG(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END)*100,2) AS terminated_attrition_rate
+FROM hr_data
+WHERE performance_rating = 'needs improvement'
+GROUP BY fine_tenure_bucket
+ORDER BY MIN(TIMESTAMPDIFF(MONTH, hire_date, CURDATE()));
+
+
+-- Salary by Tenure
+
+SELECT
+	CASE
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 3 THEN '0-3 months'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 6 THEN '3-6 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 12 THEN '6-12 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 24 THEN '1-2 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 36 THEN '2-3 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 60 THEN '3-5 years'
+		ELSE '5+ year'
+	END AS fine_tenure_bucket,
+    AVG(salary) as salary
+
+FROM hr_data
+GROUP BY fine_tenure_bucket
+ORDER BY MIN(TIMESTAMPDIFF(MONTH, hire_date, CURDATE()));
