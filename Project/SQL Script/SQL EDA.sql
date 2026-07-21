@@ -196,7 +196,7 @@ FROM hr_data
 GROUP BY fine_tenure_bucket
 ORDER BY MIN(TIMESTAMPDIFF(MONTH, hire_date, CURDATE()));
 
--- Resigned (Across All performance Rating) 
+-- Resigned/Teriminated split Attrition Rate (Across All performance Rating) 
 SELECT
 	CASE
 		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 3 THEN '0-3 months'
@@ -257,3 +257,57 @@ SELECT
 FROM hr_data
 GROUP BY fine_tenure_bucket
 ORDER BY MIN(TIMESTAMPDIFF(MONTH, hire_date, CURDATE()));
+
+
+-- Job Level Across Tenure Buckets
+SELECT
+	CASE
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 3 THEN '0-3 months'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 6 THEN '3-6 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 12 THEN '6-12 months'
+        WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 24 THEN '1-2 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 36 THEN '2-3 years'
+		WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 60 THEN '3-5 years'
+		ELSE '5+ year'
+	END AS fine_tenure_bucket,
+    Job_Level,
+    COUNT(*) AS total_employees
+
+FROM hr_data
+GROUP BY fine_tenure_bucket, job_level
+ORDER BY MIN(TIMESTAMPDIFF(MONTH, hire_date, CURDATE())), job_level;
+
+
+-- Population distribution across the job level and tenure 
+
+SELECT 
+	fine_tenure_bucket,
+    ROUND(SUM(CASE WHEN job_level = 'junior' THEN 1 ELSE 0 END)*100/C POUNT(*),1) AS junior_pct,
+    ROUND(SUM(CASE WHEN job_level = 'mid' THEN 1 ELSE 0 END)*100/COUNT(*),1) AS Mid_pct,
+    ROUND(SUM(CASE WHEN job_level = 'senior' THEN 1 ELSE 0 END)*100/COUNT(*),1) AS Senior_pct,
+    ROUND(SUM(CASE WHEN job_level = 'Director' THEN 1 ELSE 0 END)*100/COUNT(*),1) AS Director_pct
+FROM(
+	SELECT
+		CASE
+			WHEN timestampdiff(MONTH, hire_date, CURDATE()) < 6 THEN '3-6 Months'
+            WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 12 THEN '6-12 Months'
+            WHEN TIMESTAMPDIFF(MONTH,hire_date, CURDATE()) < 24 THEN '1-2 Years'
+            WHEN TIMESTAMPDIFF(MONTH,hire_date, CURDATE()) < 36 THEN '2-3 Years'
+            WHEN TIMESTAMPDIFF(MONTH, hire_date, CURDATE()) < 60 THEN '3-5 Years'
+            ELSE '5+ Years'
+		END  AS fine_tenure_bucket,
+        job_level
+	FROM hr_data) AS sub
+GROUP BY fine_tenure_bucket
+ORDER BY FIELD(fine_tenure_bucket, '3-6 Months', '6-12 Months', '1-2 Years', '2-3 Years', '3-5 Years', '5+ Years');
+
+-- A/B-Testing
+
+-- Work_mode-Attrition Contingency Table 
+SELECT
+	work_mode,
+	ROUND(SUM(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END)*100/COUNT(*),2) AS 'resigned %',
+    ROUND(SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END)*100/COUNT(*),2) AS 'terminated %'
+FROM hr_data
+WHERE status != 'retired'
+GROUP BY work_mode;
