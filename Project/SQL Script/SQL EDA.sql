@@ -311,3 +311,14 @@ SELECT
 FROM hr_data
 WHERE status != 'retired'
 GROUP BY work_mode;
+
+SELECT
+	performance_rating,
+    salary
+FROM hr_data
+WHERE performance_rating IN ('excellent', 'needs improvement');
+
+SELECT performance_rating, job_level, COUNT(*) as count, ROUND(AVG(salary),2) as avg_salary
+FROM hr_data
+WHERE performance_rating IN ('Excellent', 'Needs Improvement')
+GROUP BY performance_rating, job_level;
