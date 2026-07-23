@@ -322,3 +322,10 @@ SELECT performance_rating, job_level, COUNT(*) as count, ROUND(AVG(salary),2) as
 FROM hr_data
 WHERE performance_rating IN ('Excellent', 'Needs Improvement')
 GROUP BY performance_rating, job_level;
+
+SELECT
+	job_level,
+	SUM(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END) AS resigned,
+    SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) AS 'terminated'
+FROM hr_data
+GROUP BY job_level;
