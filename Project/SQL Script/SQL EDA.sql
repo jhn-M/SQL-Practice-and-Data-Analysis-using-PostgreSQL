@@ -329,3 +329,11 @@ SELECT
     SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) AS 'terminated'
 FROM hr_data
 GROUP BY job_level;
+
+SELECT
+	job_level,
+	SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+	SUM(CASE WHEN status = 'resigned' THEN 1 ELSE 0 END) AS resigned,
+    SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) AS 'terminated'
+FROM hr_data
+GROUP BY job_level;
